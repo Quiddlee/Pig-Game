@@ -104,8 +104,9 @@ btnHold.addEventListener('click', btnHoldFn = () => {
   score.textContent = 0;
   localScore = 0;
 
-  if (globalScore.textContent >= 100) {
+  if (globalScore.textContent >= 10) {
     fieldClasses.add('player--winner');
+    dice.style.display = 'none';
 
     [ [ btnHold, btnHoldFn ], [ btnRoll, btnRollFn ] ].forEach(
       ([ btn, callBack ]) => {
