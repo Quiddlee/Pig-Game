@@ -32,7 +32,9 @@ const [ btnRoll, btnHold, btnNew ]
   'new'
 ].map(modifier => document.querySelector(`.btn--${ modifier }`));
 
-const diceElem = document.querySelector('.dice');
+const dice = document.querySelector('.dice');
+dice.style.display = 'none';
+
 let localScore = 0;
 let btnHoldFn;
 let btnRollFn;
@@ -76,7 +78,9 @@ const togglePlayer = () => {
 btnRoll.addEventListener('click', btnRollFn = () => {
   const rolledNumber = Math.floor(Math.random() * 6) + 1;
   const { score } = currentUser;
-  diceElem.src = `dice-${ rolledNumber }.png`;
+
+  dice.src = `dice-${ rolledNumber }.png`;
+  dice.style.display = 'block';
 
   if (rolledNumber === 1) {
     localScore = 0;
@@ -132,4 +136,6 @@ btnNew.addEventListener('click', () => {
     ([ btn, callBack ]) => {
       btn.addEventListener('click', callBack);
     });
+
+  dice.style.display = 'none';
 });
