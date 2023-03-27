@@ -1,71 +1,135 @@
 'use strict';
 
-const player0Field = document.querySelector('.player--0');
-const player1Field = document.querySelector('.player--1');
-const player0GlobalScore = document.querySelector('#score--0');
-const player1GlobalScore = document.querySelector('#score--1');
-const player0CurrentScore = document.querySelector('#current--0');
-const player1CurrentScore = document.querySelector('#current--1');
-const btnRoll = document.querySelector('.btn--roll');
-const btnHold = document.querySelector('.btn--hold');
-const btnNew = document.querySelector('.btn--new');
+const getSimilarElements = (selector) => {
+  return [ '_', '_' ].map(
+    (_, i) => document.querySelector(`${ selector }${ i }`));
+};
+
+const [
+  [
+    player0Field,
+    player1Field
+  ],
+  [
+    player0GlobalScore,
+    player1GlobalScore
+  ],
+  [
+    player0CurrentScore,
+    player1CurrentScore
+  ]
+] = [
+  '.player--',
+  '#score--',
+  '#current--'
+].map(
+  selector => getSimilarElements(selector));
+
+const [ btnRoll, btnHold, btnNew ]
+  = [
+  'roll',
+  'hold',
+  'new'
+].map(modifier => document.querySelector(`.btn--${ modifier }`));
+
 const diceElem = document.querySelector('.dice');
-
-let player0Score = 0;
-let player1Score = 0;
 let localScore = 0;
+let btnHoldFn;
+let btnRollFn;
 
-player0GlobalScore.textContent = player0Score;
-player1GlobalScore.textContent = player1Score;
+[ player0GlobalScore, player1GlobalScore ].forEach(player => {
+  player.textContent = 0;
+});
 
-const user0 = Object.freeze({
-                              globalScore: player0GlobalScore,
-                              score: player0CurrentScore,
-                              field: player0Field
-                            });
+let currentUser;
+const user0 = currentUser = Object.freeze({
+                                            globalScore: player0GlobalScore,
+                                            score: player0CurrentScore,
+                                            field: player0Field
+                                          });
 const user1 = Object.freeze({
                               globalScore: player1GlobalScore,
                               score: player1CurrentScore,
                               field: player1Field
                             });
 
-let currentUser = user0;
-
 const togglePlayer = () => {
   const curr = currentUser === user0 ? user0 : user1;
-  curr.field.classList.remove('player--active');
-  currentUser = user0 === curr ? user1 : user0;
-  currentUser.field.classList.add('player--active');
+  const {
+    field: {
+      classList: fieldClasses
+    }
+  } = curr;
+
+  fieldClasses.remove('player--active');
+  const {
+    field: {
+      classList: newFieldClasses
+    }
+  } = currentUser = user0 ===
+                    curr ?
+                    user1 :
+                    user0;
+  newFieldClasses.add('player--active');
 };
 
-btnRoll.addEventListener('click', () => {
+btnRoll.addEventListener('click', btnRollFn = () => {
   const rolledNumber = Math.floor(Math.random() * 6) + 1;
+  const { score } = currentUser;
   diceElem.src = `dice-${ rolledNumber }.png`;
 
   if (rolledNumber === 1) {
     localScore = 0;
-    currentUser.score.textContent = localScore;
+    score.textContent = localScore;
     togglePlayer();
     return;
   }
 
   localScore += rolledNumber;
-  currentUser.score.textContent = localScore;
+  score.textContent = localScore;
 });
 
-btnHold.addEventListener('click', () => {
-  const usersGlobalScore = currentUser.globalScore;
+btnHold.addEventListener('click', btnHoldFn = () => {
+  const {
+    globalScore,
+    score,
+    field: { classList: fieldClasses }
+  } = currentUser;
 
-  usersGlobalScore.textContent = +usersGlobalScore.textContent + localScore;
-  currentUser.score.textContent = 0;
+  globalScore.textContent = +globalScore.textContent + localScore;
+  score.textContent = 0;
   localScore = 0;
 
-  if (usersGlobalScore.textContent >= 100) {
-    currentUser.field.classList.add('player--winner');
-    btnRoll.removeEventListener('click', () => {});
-    btnHold.removeEventListener('click', () => {});
+  if (globalScore.textContent >= 100) {
+    fieldClasses.add('player--winner');
+
+    [ [ btnHold, btnHoldFn ], [ btnRoll, btnRollFn ] ].forEach(
+      ([ btn, callBack ]) => {
+        btn.removeEventListener('click', callBack);
+      });
   }
 
   togglePlayer();
 });
 
+btnNew.addEventListener('click', () => {
+  [ user0, user1 ].forEach(user => {
+    const {
+      field: {
+        classList: fieldClasses
+      },
+      globalScore,
+      score
+    } = user;
+
+    fieldClasses.remove('player--winner', 'player--active');
+    globalScore.textContent = score.textContent = 0;
+  });
+
+  user0.field.classList.add('player--active');
+
+  [ [ btnHold, btnHoldFn ], [ btnRoll, btnRollFn ] ].forEach(
+    ([ btn, callBack ]) => {
+      btn.addEventListener('click', callBack);
+    });
+});
