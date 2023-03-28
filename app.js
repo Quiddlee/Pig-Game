@@ -1,10 +1,95 @@
 'use strict';
 
+class Game {
+  static #localScore = 0;
+
+  static constructor() {};
+
+  static get localScore() {
+    return +this.#localScore;
+  }
+
+  static set localScore(score) {
+    return this.#localScore = +score;
+  }
+
+  static toggleActivePlayer() {
+    Player.getActivePlayer().field.classList.remove('player--active');
+    if (Player.getActivePlayer() === player0) {
+      player1.state = true;
+      player0.state = false;
+    }
+    else {
+      player0.state = true;
+      player1.state = false;
+    }
+    Player.getActivePlayer().field.classList.add('player--active');
+  }
+
+  static showDice() {
+    dice.style.display = 'block';
+  }
+
+  static hideDice() {
+    dice.style.display = 'none';
+  }
+
+  static disableButtons(btns) {
+    btns.forEach(([btn, callBack]) => {
+      btn.removeEventListener('click', callBack);
+    });
+  }
+
+  static enableButtons(btns) {
+    btns.forEach(([btn, callBack]) => {
+      btn.addEventListener('click', callBack);
+    });
+  }
+}
+
+class Player {
+  #state;
+  #globalScore;
+  #currentScore;
+  #field;
+
+  constructor(gScore, currScore, field) {
+    this.#globalScore = gScore;
+    this.#currentScore = currScore;
+    this.#field = field;
+    this.#state = false;
+  }
+
+  set state(state) {
+    return this.#state = state;
+  }
+
+  get globalScore() {
+    return this.#globalScore;
+  }
+
+  get currentScore() {
+    return this.#currentScore;
+  }
+
+  get field() {
+    return this.#field;
+  }
+
+  static getActivePlayer() {
+    return player0.isActive() ? player0 : player1;
+  }
+
+  isActive() {
+    return this.#state;
+  }
+}
+
 const getSimilarElements = (selector, iter, modifier) => {
   const elements = [];
   for (let i = 0; i < iter; i++) {
     elements.push(
-      document.querySelector(`${ selector }${ modifier ? modifier : i }`));
+        document.querySelector(`${ selector }${ modifier ? modifier : i }`));
   }
   return elements;
 };
@@ -12,135 +97,104 @@ const getSimilarElements = (selector, iter, modifier) => {
 const [
   [
     player0Field,
-    player1Field
+    player1Field,
   ],
   [
     player0GlobalScore,
-    player1GlobalScore
+    player1GlobalScore,
   ],
   [
     player0CurrentScore,
-    player1CurrentScore
-  ]
+    player1CurrentScore,
+  ],
 ] = [
   '.player--',
   '#score--',
-  '#current--'
+  '#current--',
 ].map(
-  selector => getSimilarElements(selector, 2));
+    selector => getSimilarElements(selector, 2));
 
-const [ [ btnRoll ], [ btnHold ], [ btnNew ] ]
-  = [
+const [[btnRoll], [btnHold], [btnNew]] = [
   'roll',
   'hold',
-  'new'
+  'new',
 ].map(modifier => getSimilarElements('.btn--', 1, modifier));
 
 const dice = document.querySelector('.dice');
-dice.style.display = 'none';
+Game.hideDice();
 
-let localScore = 0;
 let btnHoldFn;
 let btnRollFn;
 
-[ player0GlobalScore, player1GlobalScore ].forEach(player => {
+[player0GlobalScore, player1GlobalScore].forEach(player => {
   player.textContent = 0;
 });
 
-let currentUser;
-const user0 = currentUser = Object.freeze({
-                                            globalScore: player0GlobalScore,
-                                            score: player0CurrentScore,
-                                            field: player0Field
-                                          });
-const user1 = Object.freeze({
-                              globalScore: player1GlobalScore,
-                              score: player1CurrentScore,
-                              field: player1Field
-                            });
+const player0 =
+    new Player(
+        player0GlobalScore,
+        player0CurrentScore,
+        player0Field,
+    );
+const player1 =
+    new Player(
+        player1GlobalScore,
+        player1CurrentScore,
+        player1Field,
+    );
 
-const togglePlayer = () => {
-  const curr = currentUser === user0 ? user0 : user1;
-  const {
-    field: {
-      classList: fieldClasses
-    }
-  } = curr;
-
-  fieldClasses.remove('player--active');
-  const {
-    field: {
-      classList: newFieldClasses
-    }
-  } = currentUser = user0 ===
-                    curr ?
-                    user1 :
-                    user0;
-  newFieldClasses.add('player--active');
-};
+player0.state = true;
 
 btnRoll.addEventListener('click', btnRollFn = () => {
   const rolledNumber = Math.floor(Math.random() * 6) + 1;
-  const { score } = currentUser;
+  const {currentScore: activePlayerCurrScore} = Player.getActivePlayer();
 
   dice.src = `dice-${ rolledNumber }.png`;
-  dice.style.display = 'block';
+  Game.showDice();
 
   if (rolledNumber === 1) {
-    localScore = 0;
-    score.textContent = localScore;
-    togglePlayer();
+    activePlayerCurrScore.textContent = Game.localScore = 0;
+    Game.toggleActivePlayer();
     return;
   }
 
-  localScore += rolledNumber;
-  score.textContent = localScore;
+  activePlayerCurrScore.textContent = Game.localScore += rolledNumber;
 });
 
 btnHold.addEventListener('click', btnHoldFn = () => {
   const {
-    globalScore,
-    score,
-    field: { classList: fieldClasses }
-  } = currentUser;
+    globalScore: playerGlobalScore,
+    currentScore,
+    field: {classList: playerField},
+  } = Player.getActivePlayer();
 
-  globalScore.textContent = +globalScore.textContent + localScore;
-  score.textContent = 0;
-  localScore = 0;
+  playerGlobalScore.textContent = +playerGlobalScore.textContent +
+      Game.localScore;
+  currentScore.textContent = Game.localScore = 0;
 
-  if (globalScore.textContent >= 100) {
-    fieldClasses.add('player--winner');
-    dice.style.display = 'none';
-
-    [ [ btnHold, btnHoldFn ], [ btnRoll, btnRollFn ] ].forEach(
-      ([ btn, callBack ]) => {
-        btn.removeEventListener('click', callBack);
-      });
+  if (playerGlobalScore.textContent >= 100) {
+    playerField.add('player--winner');
+    Game.hideDice();
+    Game.disableButtons([[btnHold, btnHoldFn], [btnRoll, btnRollFn]]);
   }
 
-  togglePlayer();
+  Game.toggleActivePlayer();
 });
 
 btnNew.addEventListener('click', () => {
-  [ user0, user1 ].forEach(user => {
+  [player0, player1].forEach(user => {
     const {
-      field: {
-        classList: fieldClasses
-      },
+      field: {classList: playerField},
       globalScore,
-      score
+      currentScore,
     } = user;
 
-    fieldClasses.remove('player--winner', 'player--active');
-    globalScore.textContent = score.textContent = 0;
+    playerField.remove('player--winner', 'player--active');
+    globalScore.textContent = currentScore.textContent = 0;
   });
 
-  user0.field.classList.add('player--active');
+  player0.field.classList.add('player--active');
 
-  [ [ btnHold, btnHoldFn ], [ btnRoll, btnRollFn ] ].forEach(
-    ([ btn, callBack ]) => {
-      btn.addEventListener('click', callBack);
-    });
-
-  dice.style.display = 'none';
+  Game.enableButtons([[btnHold, btnHoldFn], [btnRoll, btnRollFn]]);
+  Game.hideDice();
 });
