@@ -1,8 +1,12 @@
 'use strict';
 
-const getSimilarElements = (selector) => {
-  return [ '_', '_' ].map(
-    (_, i) => document.querySelector(`${ selector }${ i }`));
+const getSimilarElements = (selector, iter, modifier) => {
+  const elements = [];
+  for (let i = 0; i < iter; i++) {
+    elements.push(
+      document.querySelector(`${ selector }${ modifier ? modifier : i }`));
+  }
+  return elements;
 };
 
 const [
@@ -23,14 +27,14 @@ const [
   '#score--',
   '#current--'
 ].map(
-  selector => getSimilarElements(selector));
+  selector => getSimilarElements(selector, 2));
 
-const [ btnRoll, btnHold, btnNew ]
+const [ [ btnRoll ], [ btnHold ], [ btnNew ] ]
   = [
   'roll',
   'hold',
   'new'
-].map(modifier => document.querySelector(`.btn--${ modifier }`));
+].map(modifier => getSimilarElements('.btn--', 1, modifier));
 
 const dice = document.querySelector('.dice');
 dice.style.display = 'none';
