@@ -1,6 +1,6 @@
 # Pig Game! | JavaScript Course Project
 
-**Preview: https://quiddlee.github.io/pig-game**
+**Preview: https://quiddlee.github.io/Pig-Game**
 
 **Stack:**
 
